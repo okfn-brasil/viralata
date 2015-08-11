@@ -1,17 +1,24 @@
-# Mini Auth: Restlike & Social (MARS)
-
 # Vira-Lata (EXPERIMETAL!!!)
 
-https://github.com/LukeB42/microauth
-https://github.com/omab/python-social-auth
-https://en.wikipedia.org/wiki/Kerberos_%28protocol%29
+Microservice for Authentication: Restlike & Social.
 
-No role management
+Similar to [microauth](https://github.com/LukeB42/microauth), but merged with [python-social-auth](https://github.com/omab/python-social-auth) to allow auth using other providers.
+Instead of Microauth, Vira-Lata has no role management.
 
-# install deps...
+The protocol is similar to [Kerberos](https://en.wikipedia.org/wiki/Kerberos_%28protocol%29), having "main" and "micro" tokens.
 
-# Prepare BD
+
+**This code should not yet be used in production!**
+
+
+## Install
+
+python setup.py install
+
+## Prepare BD
+
 python manage.py initdb
 
-# Run!
+## Run!
+
 python manage.py run
