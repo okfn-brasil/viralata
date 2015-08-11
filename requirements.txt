@@ -7,7 +7,7 @@ python-social-auth
 pyjwt
 cryptography
 
-# Also needs: phobos
+# Also needs: viratoken
 
 # For Postgis support:
 psycopg2

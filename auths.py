@@ -20,7 +20,7 @@ from extensions import db
 
 def init_social_models(app):
     try:
-        import mars
+        import viralata
     except:
         sys.path.append('..')
     init_social(app, db.session)
