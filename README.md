@@ -16,16 +16,25 @@ An exemple of microservice that uses the tokens produced by this microservice is
 
 ## Install
 
-python setup.py install
+```
+$ python setup.py install
+```
 
 ## Prepare BD
 
-python manage.py initdb
+```
+$ python manage.py initdb
+```
 
 ## Run!
 
-python manage.py run
+```
+$ python manage.py run
+```
 
+## API
+
+Needs doc...
 
 ## Name
 
