@@ -12,7 +12,7 @@ from auths import init_social_models
 
 # App
 app = Flask(__name__)
-# TODO: usar "path.join" aqui e em todos os outros lugares
+# TODO: usar "path.join" aqui e em todos os outros lugares (onde há '/'?)
 app.config.from_pyfile('../settings/common.py', silent=False)
 app.config.from_pyfile('../settings/local_settings.py', silent=False)
 CORS(app, resources={r"*": {"origins": "*"}})
