@@ -2,7 +2,7 @@
 
 Microservice for Authentication: Restlike & Social.
 
-Similar to [microauth](https://github.com/LukeB42/microauth), but merged with [python-social-auth](https://github.com/omab/python-social-auth) to allow auth using other providers.
+Similar to [microauth](https://github.com/LukeB42/microauth), but built over [python-social-auth](https://github.com/omab/python-social-auth) to allow auth using other providers (like oAuth).
 Instead of Microauth, Vira-Lata has no role management.
 
 The protocol is similar to [Kerberos](https://en.wikipedia.org/wiki/Kerberos_%28protocol%29), having "main" and "micro" tokens.
@@ -22,3 +22,9 @@ python manage.py initdb
 ## Run!
 
 python manage.py run
+
+
+## Name
+
+Vira-Lata, in brazilian portuguese, means mutt/mongrel.
+So this name can be considered a more humble version of the mighty [Cerberus](https://en.wikipedia.org/wiki/Cerberus), symbol of the [Kerberos protocol](https://en.wikipedia.org/wiki/Kerberos_%28protocol%29)
