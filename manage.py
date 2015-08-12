@@ -3,7 +3,7 @@
 
 from flask.ext.script import Server, Manager, Shell
 
-from app import app
+from viralata.app import app
 from extensions import db
 
 
