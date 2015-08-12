@@ -20,7 +20,21 @@ An exemple of microservice that uses the tokens produced by this microservice is
 $ python setup.py install
 ```
 
-## Prepare BD
+If you are using Postgres:
+
+```
+$ pip install psycopg2
+```
+
+## Prepare DB
+
+Create the database and user, set them in `settings/local_settings.py` as `SQLALCHEMY_DATABASE_URI`.
+
+```python
+SQLALCHEMY_DATABASE_URI = 'postgresql://<user>:<password>@localhost/<database>'
+```
+
+Create tables:
 
 ```
 $ python manage.py initdb

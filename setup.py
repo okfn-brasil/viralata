@@ -19,6 +19,7 @@ setup(
         'Flask-SQLAlchemy',
         'python-social-auth',
         'viratoken',
+        # psycopg2, # for Postgres support
     ],
     keywords=['authentication', 'microservice'],
     classifiers=[
