@@ -9,10 +9,12 @@ from flask.ext.restplus import Resource, Api
 from auths import get_auth_url, get_username
 from models import User
 from extensions import db, sv
+from utils import decode_validate_token
 
 
 # TODO: permitir configurar melhor
 MICRO_TOKEN_VALID_PERIOD = 5
+# one week
 MAIN_TOKEN_VALID_PERIOD = 10080
 
 
@@ -224,7 +226,6 @@ def create_token(username, main=False):
     """Returns a token."""
 
     if main:
-        # one week
         exp_minutes = MAIN_TOKEN_VALID_PERIOD
         token_type = "main"
     else:
@@ -238,19 +239,7 @@ def create_token(username, main=False):
 
 
 def decode_token(token):
-    try:
-        decoded = sv.decode(token)
-        # options={"verify_exp": False})
-    except sv.ExpiredSignatureError:
-        api.abort(400, "Error: Expired token!")
-    except:
-        # TODO: tratar erros... quais são?
-        raise
-
-    # Verify if token as all fields
-    for fields in ['username', 'type', 'exp']:
-        if fields not in decoded.keys():
-            api.abort(400, "Error: Malformed token! No: %s" % fields)
+    decoded = decode_validate_token(token, sv, api)
 
     # Verify if main token is not invalid
     if decoded['type'] == "main":
