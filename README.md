@@ -1,4 +1,4 @@
-# Vira-Lata (EXPERIMETAL!!!)
+# Vira-Lata (EXPERIMENTAL!!!)
 
 Microservice for Authentication: Restlike & Social.
 
