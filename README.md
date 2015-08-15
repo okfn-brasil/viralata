@@ -17,7 +17,7 @@ An exemple of microservice that uses the tokens produced by this microservice is
 ## Install
 
 ```
-$ python setup.py install
+$ python setup.py develop
 ```
 
 If you are using Postgres:
