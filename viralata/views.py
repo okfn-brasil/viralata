@@ -25,19 +25,19 @@ api = Api(version='1.0',
 
 @api.route('/login/<string:backend>/')
 class LoginBackend(Resource):
-    """Asks the URL that should be used to login with a specific backend (like
-    Facebook)."""
 
     def get(self, backend):
+        '''Asks the URL that should be used to login with a specific backend
+        (like Facebook).'''
         print("AUTH-GET")
         return {'redirect': get_auth_url(backend)}
 
 
 @api.route('/complete/<string:backend>/')
 class CompleteLoginBackend(Resource):
-    """Completes the login with a specific backend."""
 
     def post(self, backend):
+        '''Completes the login with a specific backend.'''
         print("COMPLETE-GET")
         username = get_username(backend)
         return create_tokens(username)
@@ -45,7 +45,6 @@ class CompleteLoginBackend(Resource):
 
 @api.route('/login_local')
 class LoginLocal(Resource):
-    """Login using local BD, not backend."""
 
     parser = api.parser()
     parser.add_argument('username', type=str,
@@ -54,6 +53,7 @@ class LoginLocal(Resource):
                         location='json', help="Password!!")
 
     def post(self):
+        '''Login using local BD, not backend.'''
         args = self.parser.parse_args()
         username = args['username']
         password = args['password']
@@ -73,11 +73,14 @@ class RenewMicroToken(Resource):
     parser.add_argument('token', type=str, location='json', help="Token!!!")
 
     def post(self):
+        '''Get a new micro token to be used with the other microservices.'''
         args = self.parser.parse_args()
         decoded = decode_token(args['token'])
         if decoded['type'] != "main":
             # This seems not to be a main token. It must be main for security
-            # reasons, for only main ones can be invalidated at logout
+            # reasons, for only main ones can be invalidated at logout.
+            # Allowing micro tokens would allow infinite renew by a
+            # compromised token
             api.abort(400)
 
         token = create_token(decoded['username']),
@@ -94,6 +97,7 @@ class Logout(Resource):
     parser.add_argument('token', type=str, location='json', help="Token!!!")
 
     def post(self):
+        '''Invalidates the main token.'''
         args = self.parser.parse_args()
         decoded = decode_token(args['token'])
         # Invalidates all main tokens
@@ -109,6 +113,7 @@ class GetUser(Resource):
     parser.add_argument('token', type=str, location='json', help="Token!!!")
 
     def get(self, username):
+        '''Get information about an user.'''
         args = self.parser.parse_args()
         try:
             user = User.get_user(username)
@@ -130,9 +135,10 @@ class GetUser(Resource):
 
 
 @api.route('/users')
-class GetUsers(Resource):
+class ListUsers(Resource):
 
     def get(self):
+        '''List users.'''
         users = db.session.query(User.username).all()
 
         return {
@@ -153,6 +159,7 @@ class EditUser(Resource):
                         location='json', help="Email!!")
 
     def put(self, username):
+        '''Edit information about an user.'''
         args = self.parser.parse_args()
         decoded = decode_token(args['token'])
         if username == decoded['username']:
@@ -181,6 +188,7 @@ class RegisterUser(Resource):
                         location='json', help="Email!!")
 
     def post(self, username):
+        '''Register a new user.'''
         args = self.parser.parse_args()
         # TODO: validar username
         # TODO: case insensitive? ver isso na hora de login tb
@@ -201,14 +209,14 @@ class RegisterUser(Resource):
 
 
 # def create_token(username, exp_minutes=5):
-#     """Returns a token."""
+#     '''Returns a token.'''
 #     return sv.encode({
 #         'username': username,
 #     }, exp_minutes)
 
 
 def create_tokens(username):
-    """Returns tokens."""
+    '''Returns new main and micro tokens for the user.'''
     main_token = create_token(username, True)
     user = get_user(username)
     # TODO: Talvez usar algo mais rápido para decodificar o token,
@@ -223,7 +231,7 @@ def create_tokens(username):
 
 
 def create_token(username, main=False):
-    """Returns a token."""
+    '''Returns a token.'''
 
     if main:
         exp_minutes = MAIN_TOKEN_VALID_PERIOD
