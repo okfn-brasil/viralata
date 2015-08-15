@@ -19,8 +19,8 @@ MAIN_TOKEN_VALID_PERIOD = 10080
 
 
 api = Api(version='1.0',
-          title='MARS',
-          description='Social Auth')
+          title='Vira-lata',
+          description='An authentication microservice.')
 
 
 @api.route('/login/<string:backend>/')
