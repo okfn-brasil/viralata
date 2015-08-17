@@ -28,6 +28,9 @@ Important notes:
 - The Vira-Lata keeps control of invalidated main token, so they can have longer lives. But the other microservices don't know if a main token was invalidated, so they should only accept micro tokens.
 - Micro tokens cannot be used to get a new micro token. This would allow infinite renew. Only main tokens can be used for this purpose.
 
+The tokens are JWTs. To sign them the Vira-Lata needs a private key. The other micro services need the public key.
+The tokens have `username` (username of the user), `type` ("micro" or "main") and an `exp` field.
+
 
 ## Install
 
