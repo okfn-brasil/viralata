@@ -29,7 +29,7 @@ Important notes:
 - Micro tokens cannot be used to get a new micro token. This would allow infinite renew. Only main tokens can be used for this purpose.
 
 The tokens are JWTs. To sign them the Vira-Lata needs a private key. The other micro services need the public key.
-The tokens have `username` (username of the user), `type` ("micro" or "main") and an `exp` field.
+The tokens have `username` (username of the user), `type` ("micro" or "main") and an `exp` (expiration time) field.
 
 
 ## Install
