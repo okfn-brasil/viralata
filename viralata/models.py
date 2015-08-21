@@ -41,7 +41,4 @@ class User(db.Model):
 
     @classmethod
     def verify_user_password(cls, username, password):
-        return (
-            db.session.query(cls).filter(cls.username == username).one()
-            .verify_password(password)
-        )
+        return cls.get_user(username).verify_password(password)
