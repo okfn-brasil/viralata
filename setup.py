@@ -18,6 +18,7 @@ setup(
         'Flask-CORS',
         'Flask-SQLAlchemy',
         'python-social-auth',
+        'passlib',
         'viratoken',
         # psycopg2, # for Postgres support
     ],

@@ -58,7 +58,7 @@ class LoginLocal(Resource):
         username = args['username']
         password = args['password']
         try:
-            if User.verify_password(username, password):
+            if User.verify_user_password(username, password):
                 return create_tokens(username)
             else:
                 api.abort(400, "Wrong password...")
@@ -194,12 +194,12 @@ class RegisterUser(Resource):
         # TODO: case insensitive? ver isso na hora de login tb
         username
         # TODO: validar password
-        # TODO: encriptar e salgar password
         password = args['password']
         # TODO: validar email
         email = args.get('email')
 
-        user = User(username=username, password=password, email=email)
+        user = User(username=username, email=email)
+        user.hash_password(password)
         db.session.add(user)
         try:
             db.session.commit()
