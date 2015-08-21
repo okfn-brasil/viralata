@@ -4,7 +4,7 @@
 from flask.ext.script import Server, Manager, Shell
 
 from viralata.app import app
-from extensions import db
+from viralata.extensions import db
 
 
 manager = Manager(app)
@@ -18,7 +18,7 @@ manager.add_command('shell', Shell(make_context=lambda: {
 @manager.command
 def initdb():
     from social.apps.flask_app.default import models as social_models
-    import models
+    from viralata import models
 
     social_models.PSABase.metadata.drop_all(db.engine)
     # models.Base.metadata.drop_all(db.engine)
