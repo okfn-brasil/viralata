@@ -195,6 +195,8 @@ class RegisterUser(Resource):
 
         # TODO: case insensitive? ver isso na hora de login tb
         # username = username.lower()
+        if len(username) < 5:
+            api.abort(400, 'Invalid username. Needs at least 5 characters.')
         if not re.match(r'[A-Za-z0-9]{5,}', username):
             api.abort(400, 'Invalid characters in username...')
 
