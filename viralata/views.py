@@ -193,10 +193,9 @@ class RegisterUser(Resource):
         '''Register a new user.'''
         args = self.parser.parse_args()
 
-        # TODO: validar username
         # TODO: case insensitive? ver isso na hora de login tb
         # username = username.lower()
-        if not re.match(r'[a-z0-9]{5,}', username):
+        if not re.match(r'[A-Za-z0-9]{5,}', username):
             api.abort(400, 'Invalid characters in username...')
 
         password = args['password']
