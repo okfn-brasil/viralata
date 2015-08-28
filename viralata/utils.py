@@ -6,6 +6,8 @@ def decode_validate_token(token, sv, api):
     """This tries to be a general function to decode and validade any token.
     Receives a token, a SignerVerifier and an API.
     """
+    if not token:
+        api.abort(400, "Error: No token received!")
     try:
         decoded = sv.decode(token)
         # options={"verify_exp": False})
