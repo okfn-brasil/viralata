@@ -3,9 +3,9 @@
 
 import re
 
+import bleach
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.exc import NoResultFound
-
 from flask.ext.restplus import Resource, Api
 
 from auths import get_auth_url, get_username
@@ -167,7 +167,7 @@ class EditUser(Resource):
         if username == decoded['username']:
             user = get_user(decoded['username'])
             if args['description']:
-                user.description = args['description']
+                user.description = bleach.clean(args['description'], strip=True)
             if args['email']:
                 user.email = args['email']
             db.session.commit()

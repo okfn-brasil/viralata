@@ -20,6 +20,7 @@ setup(
         'python-social-auth',
         'passlib',
         'viratoken',
+        'bleach'
         # psycopg2, # for Postgres support
     ],
     keywords=['authentication', 'microservice'],
