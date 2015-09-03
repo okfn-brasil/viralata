@@ -6,6 +6,7 @@ import re
 import bleach
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.exc import NoResultFound
+from flask import redirect, url_for, make_response
 from flask.ext.restplus import Resource, Api
 
 from auths import get_auth_url, get_username
@@ -24,39 +25,95 @@ api = Api(version='1.0',
           title='Vira-lata',
           description='An authentication microservice.')
 
+arguments = {
+    'token': {
+        'location': 'json',
+        'help': 'The authentication token.',
+    },
+    'username': {
+        'location': 'json',
+        'help': 'The username.',
+    },
+    'password': {
+        'location': 'json',
+        'help': 'The password.',
+    },
+    'email': {
+        'location': 'json',
+        'help': 'The email.',
+    },
+    'description': {
+        'location': 'json',
+        'help': 'The user description.',
+    },
+}
 
-@api.route('/login/<string:backend>/')
-class LoginBackend(Resource):
+
+def create_parser(*args):
+    '''Create a parser for the passed arguments.'''
+    parser = api.parser()
+    for arg in args:
+        parser.add_argument(arg, **arguments[arg])
+    return parser
+
+
+general_parser = create_parser(*arguments)
+
+
+@api.route('/login/external/manual/<string:backend>')
+class LoginExtManAPI(Resource):
 
     def get(self, backend):
         '''Asks the URL that should be used to login with a specific backend
         (like Facebook).'''
         print('AUTH-GET')
-        return {'redirect': get_auth_url(backend)}
+        return {'redirect': get_auth_url(backend, 'loginextmanapi')}
 
 
-@api.route('/complete/<string:backend>/')
-class CompleteLoginBackend(Resource):
+@api.route('/complete/manual/<string:backend>')
+class CompleteLoginExtManAPI(Resource):
 
     def post(self, backend):
         '''Completes the login with a specific backend.'''
         print('COMPLETE-GET')
-        username = get_username(backend)
+        username = get_username(backend, redirect_uri='/')
         return create_tokens(username)
 
 
-@api.route('/login_local')
-class LoginLocal(Resource):
+# @api.route('/login/external/automatic/<string:backend>')
+# class StartLoginExtAutoAPI(Resource):
 
-    parser = api.parser()
-    parser.add_argument('username', type=str,
-                        location='json', help='Username!!')
-    parser.add_argument('password', type=str,
-                        location='json', help='Password!!')
+#     def get(self, backend):
+#         '''Asks the URL that should be used to login with a specific backend
+#         (like Facebook).'''
+#         print('AUTH-GET')
+#         print(get_auth_url(backend, 'completeloginautoapi'))
+#         return {'redirect': get_auth_url(backend, 'completeloginautoapi')}
+#         # return redirect(get_auth_url(backend, 'completeloginautoapi'))
 
+# @api.route('/complete/automatic/<string:backend>')
+# class CompleteLoginAutoAPI(Resource):
+
+#     def get(self, backend):
+#         '''Completes the login with a specific backend.'''
+#         print('COMPLETE-GET')
+#         username = get_username(backend,
+#                                 url_for('completeloginautoapi',
+#                                         backend='facebook'))
+#         tokens = create_tokens(username)
+#         response = redirect("http://localhost:5001/")
+#         # import IPython; IPython.embed()
+#         return response
+#         # return create_tokens(username)
+
+
+@api.route('/login/local')
+class LoginLocalAPI(Resource):
+
+    @api.doc(parser=create_parser('username', 'password'))
     def post(self):
-        '''Login using local BD, not backend.'''
-        args = self.parser.parse_args()
+        '''Login using local DB, not a third-party service.'''
+        args = general_parser.parse_args()
         username = args['username']
         password = args['password']
         try:
@@ -71,12 +128,10 @@ class LoginLocal(Resource):
 @api.route('/renew_micro_token')
 class RenewMicroToken(Resource):
 
-    parser = api.parser()
-    parser.add_argument('token', type=str, location='json', help='Token!!!')
-
+    @api.doc(parser=create_parser('token'))
     def post(self):
         '''Get a new micro token to be used with the other microservices.'''
-        args = self.parser.parse_args()
+        args = general_parser.parse_args()
         decoded = decode_token(args['token'])
         if decoded['type'] != 'main':
             # This seems not to be a main token. It must be main for security
@@ -95,12 +150,10 @@ class RenewMicroToken(Resource):
 @api.route('/logout')
 class Logout(Resource):
 
-    parser = api.parser()
-    parser.add_argument('token', type=str, location='json', help='Token!!!')
-
+    @api.doc(parser=create_parser('token'))
     def post(self):
         '''Invalidates the main token.'''
-        args = self.parser.parse_args()
+        args = general_parser.parse_args()
         decoded = decode_token(args['token'])
         # Invalidates all main tokens
         get_user(decoded['username']).last_token_exp = 0
@@ -108,15 +161,13 @@ class Logout(Resource):
         return {}
 
 
-@api.route('/users/<string:username>')
-class GetUser(Resource):
+@api.route('/user/<string:username>')
+class UserAPI(Resource):
 
-    parser = api.parser()
-    parser.add_argument('token', type=str, location='json', help='Token!!!')
-
+    @api.doc(parser=create_parser('token'))
     def get(self, username):
         '''Get information about an user.'''
-        args = self.parser.parse_args()
+        args = general_parser.parse_args()
         try:
             user = User.get_user(username)
         except NoResultFound:
@@ -135,39 +186,16 @@ class GetUser(Resource):
                 resp['email'] = user.email
         return resp
 
-
-@api.route('/users')
-class ListUsers(Resource):
-
-    def get(self):
-        '''List users.'''
-        users = db.session.query(User.username).all()
-
-        return {
-            'users': [u[0] for u in users]
-        }
-
-
-@api.route('/users/<string:username>/edit')
-class EditUser(Resource):
-
-    parser = api.parser()
-    parser.add_argument('token', type=str, location='json', help='Token!!!')
-    parser.add_argument('description', type=str,
-                        location='json', help='Descr!!!')
-    # parser.add_argument('password', type=str,
-    #                     location='json', help='Password!!')
-    parser.add_argument('email', type=str,
-                        location='json', help='Email!!')
-
+    @api.doc(parser=create_parser('token', 'description', 'email'))
     def put(self, username):
         '''Edit information about an user.'''
-        args = self.parser.parse_args()
+        args = general_parser.parse_args()
         decoded = decode_token(args['token'])
         if username == decoded['username']:
             user = get_user(decoded['username'])
             if args['description']:
-                user.description = bleach.clean(args['description'], strip=True)
+                user.description = bleach.clean(args['description'],
+                                                strip=True)
             if args['email']:
                 user.email = args['email']
             db.session.commit()
@@ -180,18 +208,10 @@ class EditUser(Resource):
         else:
             api.abort(550, 'Editing other user profile...')
 
-
-@api.route('/users/<string:username>/register')
-class RegisterUser(Resource):
-
-    parser = api.parser()
-    parser.add_argument('password')
-    parser.add_argument('email', type=str,
-                        location='json', help='Email!!')
-
+    @api.doc(parser=create_parser('password', 'email'))
     def post(self, username):
         '''Register a new user.'''
-        args = self.parser.parse_args()
+        args = general_parser.parse_args()
 
         # TODO: case insensitive? ver isso na hora de login tb
         # username = username.lower()
@@ -222,6 +242,18 @@ class RegisterUser(Resource):
         return create_tokens(username)
 
 
+@api.route('/users')
+class ListUsers(Resource):
+
+    def get(self):
+        '''List registered users.'''
+        users = db.session.query(User.username).all()
+
+        return {
+            'users': [u[0] for u in users]
+        }
+
+
 # def create_token(username, exp_minutes=5):
 #     '''Returns a token.'''
 #     return sv.encode({
@@ -245,7 +277,8 @@ def create_tokens(username):
 
 
 def create_token(username, main=False):
-    '''Returns a token.'''
+    '''Returns a token for the passed username.
+    "main" controls the type of the token.'''
 
     if main:
         exp_minutes = MAIN_TOKEN_VALID_PERIOD

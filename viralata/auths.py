@@ -3,7 +3,8 @@
 
 import sys
 
-from flask import request, g, url_for
+import flask
+from flask import g, url_for
 
 from social.apps.flask_app.default.models import init_social
 from social.actions import do_auth, do_complete
@@ -29,9 +30,9 @@ def init_social_models(app):
 # set_current_strategy_getter(load_strategy)
 
 
-def get_auth_url(backend, redirect_uri='completeloginbackend',
-                 *args, **kwargs):
+def get_auth_url(backend, redirect_uri, *args, **kwargs):
     uri = redirect_uri
+    # import IPython; IPython.embed()
     if uri and not uri.startswith('/'):
         uri = url_for(uri, backend=backend)
 
@@ -42,9 +43,9 @@ def get_auth_url(backend, redirect_uri='completeloginbackend',
     return resp.location
 
 
-def get_username(backend):
+def get_username(backend, redirect_uri):
     g.strategy = load_strategy()
-    g.backend = load_backend(g.strategy, backend, redirect_uri="/")
+    g.backend = load_backend(g.strategy, backend, redirect_uri=redirect_uri)
     do_complete(g.backend, login=do_login)
     return g.user.username
 
@@ -55,7 +56,7 @@ class HeadlessFacebookStrategy(FlaskStrategy):
     def build_absolute_uri(self, path=None):
         # TODO: Quando a API diretamente (e não a partir de outro site) não tem
         # "referrer". Como resolver isso?
-        return build_absolute_uri(request.referrer, path).partition("&")[0]
+        return build_absolute_uri(flask.request.referrer, path).partition("&")[0]
 
 
 class HeadlessFacebookBackend(FacebookOAuth2):
@@ -77,7 +78,7 @@ class HeadlessFacebookBackend(FacebookOAuth2):
     def request(self, url, method='GET', *args, **kwargs):
         from social.utils import user_agent
         from social.exceptions import AuthFailed
-        from requests import request
+        from requests import request as req
         kwargs.setdefault('headers', {})
         if self.setting('VERIFY_SSL') is not None:
             kwargs.setdefault('verify', self.setting('VERIFY_SSL'))
@@ -88,7 +89,8 @@ class HeadlessFacebookBackend(FacebookOAuth2):
             kwargs['headers']['User-Agent'] = user_agent()
 
         try:
-            response = request(method, url, *args, **kwargs)
+            # import IPython; IPython.embed()
+            response = req(method, url, *args, **kwargs)
         except ConnectionError as err:
             raise AuthFailed(self, str(err))
         try:
