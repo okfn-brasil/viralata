@@ -13,6 +13,8 @@ def decode_validate_token(token, sv, api):
         # options={"verify_exp": False})
     except sv.ExpiredSignatureError:
         api.abort(400, "Error: Expired token!")
+    except sv.DecodeError:
+        api.abort(400, "Error: Token decode error!")
     except:
         # TODO: tratar erros... quais são?
         raise
