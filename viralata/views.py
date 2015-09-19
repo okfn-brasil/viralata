@@ -2,6 +2,7 @@
 # coding: utf-8
 
 import re
+import json
 
 import bleach
 from sqlalchemy.exc import IntegrityError
@@ -120,9 +121,11 @@ class LoginLocalAPI(Resource):
             if User.verify_user_password(username, password):
                 return create_tokens(username)
             else:
-                api.abort(400, 'Wrong password...')
+                abort_with_msg(400, 'Wrong password...', ['password'])
         except NoResultFound:
-            api.abort(400, 'Username seems not registered...')
+            abort_with_msg(400,
+                           'Username seems not registered...',
+                           ['username'])
 
 
 @api.route('/renew_micro_token')
@@ -138,7 +141,7 @@ class RenewMicroToken(Resource):
             # reasons, for only main ones can be invalidated at logout.
             # Allowing micro tokens would allow infinite renew by a
             # compromised token
-            api.abort(400)
+            abort_with_msg(400, 'Must use a main token', ['token'])
 
         token = create_token(decoded['username']),
         return {
@@ -171,7 +174,7 @@ class UserAPI(Resource):
         try:
             user = User.get_user(username)
         except NoResultFound:
-            api.abort(404)
+            abort_with_msg(404, 'User not found', ['username'])
 
         resp = {
             'username': user.username,
@@ -206,7 +209,8 @@ class UserAPI(Resource):
             }
 
         else:
-            api.abort(550, 'Editing other user profile...')
+            abort_with_msg(550, 'Editing other user profile...',
+                           ['username', 'token'])
 
     @api.doc(parser=create_parser('password', 'email'))
     def post(self, username):
@@ -216,16 +220,23 @@ class UserAPI(Resource):
         # TODO: case insensitive? ver isso na hora de login tb
         # username = username.lower()
         if len(username) < 5:
-            api.abort(400, 'Invalid username. Needs at least 5 characters.')
+            abort_with_msg(400,
+                           'Invalid username. Needs at least 5 characters.',
+                           ['username'])
         if not re.match(r'[A-Za-z0-9]{5,}', username):
-            api.abort(400, 'Invalid characters in username...')
+            abort_with_msg(400, 'Invalid characters in username...',
+                           ['username'])
 
         password = args['password']
         # Validate password
         if len(password) < 5:
-            api.abort(400, 'Invalid password. Needs at least 5 characters.')
+            abort_with_msg(400,
+                           'Invalid password. Needs at least 5 characters.',
+                           ['passoword'])
         if not re.match(r'[A-Za-z0-9@#$%^&+=]{5,}', password):
-            api.abort(400, 'Invalid characters in password...')
+            abort_with_msg(400,
+                           'Invalid characters in password...',
+                           ['passoword'])
 
         email = args.get('email')
         # # Validate email
@@ -238,7 +249,9 @@ class UserAPI(Resource):
         try:
             db.session.commit()
         except IntegrityError:
-            api.abort(400, 'It seems this username is already registered...')
+            abort_with_msg(400,
+                           'It seems this username is already registered...',
+                           ['username'])
         return create_tokens(username)
 
 
@@ -300,7 +313,7 @@ def decode_token(token):
     if decoded['type'] == 'main':
         user = get_user(decoded['username'])
         if decoded['exp'] != user.last_token_exp:
-            api.abort(400, 'Error: Invalid main token!')
+            abort_with_msg(400, 'Invalid main token!', ['token'])
 
     return decoded
 
@@ -309,4 +322,12 @@ def get_user(username):
     try:
         return User.get_user(username)
     except NoResultFound:
-        api.abort(404, 'Error: User not found!')
+        abort_with_msg(404, 'User not found', ['username'])
+
+
+def abort_with_msg(error_code, msg, fields):
+    '''Aborts sending information about the error.'''
+    api.abort(error_code, json.dumps({
+        'message': msg,
+        'fields': fields
+    }))
