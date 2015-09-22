@@ -5,10 +5,12 @@ import re
 import json
 
 import bleach
+import passlib
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.exc import NoResultFound
 from flask import redirect, url_for, make_response
 from flask.ext.restplus import Resource, Api
+from flask.ext.mail import Message
 
 from auths import get_auth_url, get_username
 from models import User
@@ -42,6 +44,10 @@ arguments = {
     'new_password': {
         'location': 'json',
         'help': 'A new password, when changing the current one.',
+    },
+    'code': {
+        'location': 'json',
+        'help': 'A temporary code used to reset the password.',
     },
     'email': {
         'location': 'json',
@@ -154,35 +160,51 @@ class RenewMicroToken(Resource):
         }
 
 
-# @api.route('/reset_password')
-# class ResetPassword(Resource):
+@api.route('/reset_password')
+class ResetPassword(Resource):
 
-#     @api.doc(parser=create_parser('username', 'email'))
-#     def post(self):
-#         '''.'''
-#         args = general_parser.parse_args()
-#         user = get_user(args['username'])
-#         if user.email != args['email']:
-#             abort_with_msg(400, 'Email mismatch.', ['email'])
+    @api.doc(parser=create_parser('username', 'email'))
+    def post(self):
+        '''Sends an email to the user with a code to reset password.'''
+        args = general_parser.parse_args()
+        print(args['username'])
+        user = get_user(args['username'])
 
-#         token = api.urltoken.dumps((user.name, user.email))
-#         suburl = api.url_for(DeleteReportedAPI, token=token)
-#         delete_link = api.app.config['HOSTED_ADDRESS'] + suburl
-#         msg = Message(
-#             'Request to delete comment: %s' % comment.id,
-#             sender=api.app.config['SENDER_NAME'],
-#             recipients=api.app.config['ADMIN_EMAILS'])
-#         msg.body = api.app.config['EMAIL_TEMPLATE'].format(
-#             delete_link=delete_link,
-#             id=comment.id,
-#             author=comment.author.name,
-#             thread=comment.thread.name,
-#             created=comment.created,
-#             modified=comment.modified,
-#             text=comment.text,
-#         )
-#         api.mail.send(msg)
-#         return {'message': 'Check email!'}
+        check_user_email(user, args['email'])
+
+        msg = Message(
+            api.app.config['MAIL_SUBJECT'],
+            sender=api.app.config['SENDER_NAME'],
+            recipients=[user.email])
+
+        code = passlib.utils.generate_password(15)
+        exp = api.app.config['TIME_RESET_PASSWORD']
+        user.set_temp_password(code, exp)
+        db.session.commit()
+        msg.body = (api.app.config['EMAIL_TEMPLATE']
+                    .format(code=code, exp_min=exp/60))
+        api.mail.send(msg)
+        return {
+            'message': 'Check email!',
+            'exp': exp,
+        }
+
+    @api.doc(parser=create_parser('username', 'email', 'code', 'password'))
+    def put(self):
+        '''Change the password of a user using a temporary code.'''
+        args = general_parser.parse_args()
+        password = args['password']
+        validate_password(password)
+        username = args['username']
+        user = get_user(username)
+        check_user_email(user, args['email'])
+        print(args['code'])
+        print(user.temp_password)
+        if not user.check_temp_password(args['code']):
+            abort_with_msg(400, 'Invalid code', ['code'])
+        user.hash_password(password)
+        # Commit is done by create_tokens
+        return create_tokens(username)
 
 
 @api.route('/logout')
@@ -225,7 +247,7 @@ class UserAPI(Resource):
         return resp
 
     @api.doc(parser=create_parser('token', 'description',
-                                  'email', 'password'))
+                                  'email', 'password', 'new_password'))
     def put(self, username):
         '''Edit information about an user.'''
         args = general_parser.parse_args()
@@ -395,6 +417,11 @@ def validate_email(email):
         abort_with_msg(400,
                        'Invalid email...',
                        ['email'])
+
+
+def check_user_email(user, email):
+    if user.email != email:
+        abort_with_msg(400, 'Wrong email.', ['email'])
 
 
 def abort_with_msg(error_code, msg, fields):

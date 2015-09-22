@@ -79,3 +79,17 @@ SOCIAL_AUTH_FACEBOOK_PROFILE_EXTRA_PARAMS = {
 }
 SOCIAL_AUTH_FACEBOOK_SCOPE = ['email']
 # SOCIAL_AUTH_FACEBOOK_SCOPE = ["public_profile"]
+
+
+# Max age (in seconds) for codes used to reset passwords
+TIME_RESET_PASSWORD = 20 * 60
+
+# This is the content of the e-mail sent for a request to reset
+# a password
+EMAIL_TEMPLATE = '''
+You seem to have requested to reset your password.
+If so, use this code: {code}
+You have {exp_min} minutes to use the code.
+
+If it was a mistake you can safelly ignore this message.
+'''

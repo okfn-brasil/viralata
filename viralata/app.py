@@ -4,6 +4,7 @@
 from flask import Flask
 from flask.ext.cors import CORS
 from flask.ext.restplus import apidoc
+from flask.ext.mail import Mail
 
 from extensions import db, sv
 from views import api
@@ -27,6 +28,10 @@ sv.config(priv_key_path="settings/key",
 # API
 api.init_app(app)
 app.register_blueprint(apidoc.apidoc)
+api.app = app
 
 # Social
 init_social_models(app)
+
+# Mail
+api.mail = Mail(app)
