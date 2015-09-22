@@ -39,6 +39,10 @@ arguments = {
         'location': 'json',
         'help': 'The password.',
     },
+    'new_password': {
+        'location': 'json',
+        'help': 'A new password, when changing the current one.',
+    },
     'email': {
         'location': 'json',
         'help': 'The email.',
@@ -150,6 +154,37 @@ class RenewMicroToken(Resource):
         }
 
 
+# @api.route('/reset_password')
+# class ResetPassword(Resource):
+
+#     @api.doc(parser=create_parser('username', 'email'))
+#     def post(self):
+#         '''.'''
+#         args = general_parser.parse_args()
+#         user = get_user(args['username'])
+#         if user.email != args['email']:
+#             abort_with_msg(400, 'Email mismatch.', ['email'])
+
+#         token = api.urltoken.dumps((user.name, user.email))
+#         suburl = api.url_for(DeleteReportedAPI, token=token)
+#         delete_link = api.app.config['HOSTED_ADDRESS'] + suburl
+#         msg = Message(
+#             'Request to delete comment: %s' % comment.id,
+#             sender=api.app.config['SENDER_NAME'],
+#             recipients=api.app.config['ADMIN_EMAILS'])
+#         msg.body = api.app.config['EMAIL_TEMPLATE'].format(
+#             delete_link=delete_link,
+#             id=comment.id,
+#             author=comment.author.name,
+#             thread=comment.thread.name,
+#             created=comment.created,
+#             modified=comment.modified,
+#             text=comment.text,
+#         )
+#         api.mail.send(msg)
+#         return {'message': 'Check email!'}
+
+
 @api.route('/logout')
 class Logout(Resource):
 
@@ -160,7 +195,7 @@ class Logout(Resource):
         decoded = decode_token(args['token'])
         # Invalidates all main tokens
         get_user(decoded['username']).last_token_exp = 0
-        # TODO: será que não precisa commitar aqui?
+        db.session.commit()
         return {}
 
 
@@ -189,19 +224,45 @@ class UserAPI(Resource):
                 resp['email'] = user.email
         return resp
 
-    @api.doc(parser=create_parser('token', 'description', 'email'))
+    @api.doc(parser=create_parser('token', 'description',
+                                  'email', 'password'))
     def put(self, username):
         '''Edit information about an user.'''
         args = general_parser.parse_args()
         decoded = decode_token(args['token'])
         if username == decoded['username']:
             user = get_user(decoded['username'])
+            changed = False
+
+            print(args)
+            password = args.get('password')
+            # If is changing password
+            if password:
+                new_password = args['new_password']
+                if user.verify_password(password):
+                    validate_password(new_password, 'new_password')
+                    user.hash_password(new_password)
+                    changed = True
+                else:
+                    abort_with_msg(400, 'Wrong password...', ['password'])
+
+            # If is changing description
             if args['description']:
                 user.description = bleach.clean(args['description'],
                                                 strip=True)
-            if args['email']:
-                user.email = args['email']
-            db.session.commit()
+                changed = True
+
+            email = args.get('email')
+            # If is changing email
+            if email:
+                validate_email(email)
+                user.email = email
+                changed = True
+
+            # If some data seems to have changed, commit
+            if changed:
+                db.session.commit()
+
             return {
                 'username': user.username,
                 'description': user.description,
@@ -228,20 +289,10 @@ class UserAPI(Resource):
                            ['username'])
 
         password = args['password']
-        # Validate password
-        if len(password) < 5:
-            abort_with_msg(400,
-                           'Invalid password. Needs at least 5 characters.',
-                           ['passoword'])
-        if not re.match(r'[A-Za-z0-9@#$%^&+=]{5,}', password):
-            abort_with_msg(400,
-                           'Invalid characters in password...',
-                           ['passoword'])
+        validate_password(password)
 
         email = args.get('email')
-        # # Validate email
-        # if not re.match(r'[^@]+@[^@]+\.[^@]+', email):
-        #     api.abort(400, 'Invalid email.')
+        validate_email(email)
 
         user = User(username=username, email=email)
         user.hash_password(password)
@@ -323,6 +374,27 @@ def get_user(username):
         return User.get_user(username)
     except NoResultFound:
         abort_with_msg(404, 'User not found', ['username'])
+
+
+def validate_password(password, fieldname='password'):
+    '''Check if is a valid password. The fieldname parameter is used to
+    specify the fieldname in the error message.'''
+    if len(password) < 5:
+        abort_with_msg(400,
+                       'Invalid password. Needs at least 5 characters.',
+                       [fieldname])
+    if not re.match(r'[A-Za-z0-9@#$%^&+=]{5,}', password):
+        abort_with_msg(400,
+                       'Invalid characters in password...',
+                       [fieldname])
+
+
+def validate_email(email):
+    '''Check if is a valid email.'''
+    if not re.match(r'[^@]+@[^@]+\.[^@]+', email):
+        abort_with_msg(400,
+                       'Invalid email...',
+                       ['email'])
 
 
 def abort_with_msg(error_code, msg, fields):
