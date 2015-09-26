@@ -2,20 +2,20 @@
 # coding: utf-8
 
 import re
-import json
 
 import bleach
 import passlib
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.exc import NoResultFound
-from flask import redirect, url_for, make_response
-from flask.ext.restplus import Resource, Api
+# from flask import redirect, url_for, make_response
+from flask.ext.restplus import Resource
 from flask.ext.mail import Message
 
 from auths import get_auth_url, get_username
 from models import User
 from extensions import db, sv
 from utils import decode_validate_token
+from cutils import ExtraApi
 
 
 # TODO: permitir configurar melhor
@@ -24,15 +24,11 @@ MICRO_TOKEN_VALID_PERIOD = 5
 MAIN_TOKEN_VALID_PERIOD = 10080
 
 
-api = Api(version='1.0',
-          title='Vira-lata',
-          description='An authentication microservice.')
+api = ExtraApi(version='1.0',
+               title='Vira-lata',
+               description='An authentication microservice.')
 
-arguments = {
-    'token': {
-        'location': 'json',
-        'help': 'The authentication token.',
-    },
+api.update_parser_arguments({
     'username': {
         'location': 'json',
         'help': 'The username.',
@@ -57,18 +53,7 @@ arguments = {
         'location': 'json',
         'help': 'The user description.',
     },
-}
-
-
-def create_parser(*args):
-    '''Create a parser for the passed arguments.'''
-    parser = api.parser()
-    for arg in args:
-        parser.add_argument(arg, **arguments[arg])
-    return parser
-
-
-general_parser = create_parser(*arguments)
+})
 
 
 @api.route('/login/external/manual/<string:backend>')
@@ -121,19 +106,19 @@ class CompleteLoginExtManAPI(Resource):
 @api.route('/login/local')
 class LoginLocalAPI(Resource):
 
-    @api.doc(parser=create_parser('username', 'password'))
+    @api.doc(parser=api.create_parser('username', 'password'))
     def post(self):
         '''Login using local DB, not a third-party service.'''
-        args = general_parser.parse_args()
+        args = api.general_parse()
         username = args['username']
         password = args['password']
         try:
             if User.verify_user_password(username, password):
                 return create_tokens(username)
             else:
-                abort_with_msg(400, 'Wrong password...', ['password'])
+                api.abort_with_msg(400, 'Wrong password...', ['password'])
         except NoResultFound:
-            abort_with_msg(400,
+            api.abort_with_msg(400,
                            'Username seems not registered...',
                            ['username'])
 
@@ -141,17 +126,17 @@ class LoginLocalAPI(Resource):
 @api.route('/renew_micro_token')
 class RenewMicroToken(Resource):
 
-    @api.doc(parser=create_parser('token'))
+    @api.doc(parser=api.create_parser('token'))
     def post(self):
         '''Get a new micro token to be used with the other microservices.'''
-        args = general_parser.parse_args()
+        args = api.general_parse()
         decoded = decode_token(args['token'])
         if decoded['type'] != 'main':
             # This seems not to be a main token. It must be main for security
             # reasons, for only main ones can be invalidated at logout.
             # Allowing micro tokens would allow infinite renew by a
             # compromised token
-            abort_with_msg(400, 'Must use a main token', ['token'])
+            api.abort_with_msg(400, 'Must use a main token', ['token'])
 
         token = create_token(decoded['username']),
         return {
@@ -163,10 +148,10 @@ class RenewMicroToken(Resource):
 @api.route('/reset_password')
 class ResetPassword(Resource):
 
-    @api.doc(parser=create_parser('username', 'email'))
+    @api.doc(parser=api.create_parser('username', 'email'))
     def post(self):
         '''Sends an email to the user with a code to reset password.'''
-        args = general_parser.parse_args()
+        args = api.general_parse()
         print(args['username'])
         user = get_user(args['username'])
 
@@ -189,10 +174,10 @@ class ResetPassword(Resource):
             'exp': exp,
         }
 
-    @api.doc(parser=create_parser('username', 'email', 'code', 'password'))
+    @api.doc(parser=api.create_parser('username', 'email', 'code', 'password'))
     def put(self):
         '''Change the password of a user using a temporary code.'''
-        args = general_parser.parse_args()
+        args = api.general_parse()
         password = args['password']
         validate_password(password)
         username = args['username']
@@ -201,7 +186,7 @@ class ResetPassword(Resource):
         print(args['code'])
         print(user.temp_password)
         if not user.check_temp_password(args['code']):
-            abort_with_msg(400, 'Invalid code', ['code'])
+            api.abort_with_msg(400, 'Invalid code', ['code'])
         user.hash_password(password)
         # Commit is done by create_tokens
         return create_tokens(username)
@@ -210,10 +195,10 @@ class ResetPassword(Resource):
 @api.route('/logout')
 class Logout(Resource):
 
-    @api.doc(parser=create_parser('token'))
+    @api.doc(parser=api.create_parser('token'))
     def post(self):
         '''Invalidates the main token.'''
-        args = general_parser.parse_args()
+        args = api.general_parse()
         decoded = decode_token(args['token'])
         # Invalidates all main tokens
         get_user(decoded['username']).last_token_exp = 0
@@ -224,14 +209,14 @@ class Logout(Resource):
 @api.route('/user/<string:username>')
 class UserAPI(Resource):
 
-    @api.doc(parser=create_parser('token'))
+    @api.doc(parser=api.create_parser('token'))
     def get(self, username):
         '''Get information about an user.'''
-        args = general_parser.parse_args()
+        args = api.general_parse()
         try:
             user = User.get_user(username)
         except NoResultFound:
-            abort_with_msg(404, 'User not found', ['username'])
+            api.abort_with_msg(404, 'User not found', ['username'])
 
         resp = {
             'username': user.username,
@@ -246,11 +231,11 @@ class UserAPI(Resource):
                 resp['email'] = user.email
         return resp
 
-    @api.doc(parser=create_parser('token', 'description',
+    @api.doc(parser=api.create_parser('token', 'description',
                                   'email', 'password', 'new_password'))
     def put(self, username):
         '''Edit information about an user.'''
-        args = general_parser.parse_args()
+        args = api.general_parse()
         decoded = decode_token(args['token'])
         if username == decoded['username']:
             user = get_user(decoded['username'])
@@ -266,7 +251,7 @@ class UserAPI(Resource):
                     user.hash_password(new_password)
                     changed = True
                 else:
-                    abort_with_msg(400, 'Wrong password...', ['password'])
+                    api.abort_with_msg(400, 'Wrong password...', ['password'])
 
             # If is changing description
             if args['description']:
@@ -292,22 +277,22 @@ class UserAPI(Resource):
             }
 
         else:
-            abort_with_msg(550, 'Editing other user profile...',
+            api.abort_with_msg(550, 'Editing other user profile...',
                            ['username', 'token'])
 
-    @api.doc(parser=create_parser('password', 'email'))
+    @api.doc(parser=api.create_parser('password', 'email'))
     def post(self, username):
         '''Register a new user.'''
-        args = general_parser.parse_args()
+        args = api.general_parse()
 
         # TODO: case insensitive? ver isso na hora de login tb
         # username = username.lower()
         if len(username) < 5:
-            abort_with_msg(400,
+            api.abort_with_msg(400,
                            'Invalid username. Needs at least 5 characters.',
                            ['username'])
         if not re.match(r'[A-Za-z0-9]{5,}', username):
-            abort_with_msg(400, 'Invalid characters in username...',
+            api.abort_with_msg(400, 'Invalid characters in username...',
                            ['username'])
 
         password = args['password']
@@ -322,7 +307,7 @@ class UserAPI(Resource):
         try:
             db.session.commit()
         except IntegrityError:
-            abort_with_msg(400,
+            api.abort_with_msg(400,
                            'It seems this username is already registered...',
                            ['username'])
         return create_tokens(username)
@@ -386,7 +371,7 @@ def decode_token(token):
     if decoded['type'] == 'main':
         user = get_user(decoded['username'])
         if decoded['exp'] != user.last_token_exp:
-            abort_with_msg(400, 'Invalid main token!', ['token'])
+            api.abort_with_msg(400, 'Invalid main token!', ['token'])
 
     return decoded
 
@@ -395,18 +380,18 @@ def get_user(username):
     try:
         return User.get_user(username)
     except NoResultFound:
-        abort_with_msg(404, 'User not found', ['username'])
+        api.abort_with_msg(404, 'User not found', ['username'])
 
 
 def validate_password(password, fieldname='password'):
     '''Check if is a valid password. The fieldname parameter is used to
     specify the fieldname in the error message.'''
     if len(password) < 5:
-        abort_with_msg(400,
+        api.abort_with_msg(400,
                        'Invalid password. Needs at least 5 characters.',
                        [fieldname])
     if not re.match(r'[A-Za-z0-9@#$%^&+=]{5,}', password):
-        abort_with_msg(400,
+        api.abort_with_msg(400,
                        'Invalid characters in password...',
                        [fieldname])
 
@@ -414,19 +399,11 @@ def validate_password(password, fieldname='password'):
 def validate_email(email):
     '''Check if is a valid email.'''
     if not re.match(r'[^@]+@[^@]+\.[^@]+', email):
-        abort_with_msg(400,
+        api.abort_with_msg(400,
                        'Invalid email...',
                        ['email'])
 
 
 def check_user_email(user, email):
     if user.email != email:
-        abort_with_msg(400, 'Wrong email.', ['email'])
-
-
-def abort_with_msg(error_code, msg, fields):
-    '''Aborts sending information about the error.'''
-    api.abort(error_code, json.dumps({
-        'message': msg,
-        'fields': fields
-    }))
+        api.abort_with_msg(400, 'Wrong email.', ['email'])
