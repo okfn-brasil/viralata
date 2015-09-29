@@ -4,6 +4,8 @@ DEBUG_TB_INTERCEPT_REDIRECTS = False
 SQLALCHEMY_DATABASE_URI = 'postgresql://{user}:{password}@localhost/{database}'
 SOCIAL_AUTH_FACEBOOK_KEY = '{your_facebook_dev_key}'
 SOCIAL_AUTH_FACEBOOK_SECRET = '{your_facebook_dev_secret}'
+# This is required for PSA for sessions, even though we are not using them...
+SECRET_KEY = '{long_string...}'
 
 PRIVATE_KEY_PASSWORD = '{your_key_password}'
 

@@ -2,8 +2,8 @@
 
 # SQLALCHEMY_DATABASE_URI = 'sqlite:////%s/test.db' % dirname(abspath(__file__))
 
-SESSION_COOKIE_NAME = 'psa_session2'
-SESSION_PROTECTION = 'strong'
+# SESSION_COOKIE_NAME = 'psa_session2'
+# SESSION_PROTECTION = 'strong'
 
 # STORAGE = 'social.apps.flask_app.default.models.FlaskStorage2'
 SOCIAL_AUTH_STRATEGY = 'viralata.auths.HeadlessFacebookStrategy'
@@ -19,7 +19,7 @@ SOCIAL_AUTH_PIPELINE = (
  'social.pipeline.social_auth.load_extra_data',
  'social.pipeline.user.user_details',
  # TODO: tirar essa linha abaixo?
- 'viralata.auths.insert_user',
+ # 'viralata.auths.insert_user',
 )
 
 SOCIAL_AUTH_LOGIN_URL = '/meu_login_url/'
