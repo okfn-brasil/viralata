@@ -62,7 +62,6 @@ class LoginExtManAPI(Resource):
     def get(self, backend):
         '''Asks the URL that should be used to login with a specific backend
         (like Facebook).'''
-        print('AUTH-GET')
         return {'redirect': get_auth_url(backend, 'loginextmanapi')}
 
 
@@ -71,7 +70,6 @@ class CompleteLoginExtManAPI(Resource):
 
     def post(self, backend):
         '''Completes the login with a specific backend.'''
-        print('COMPLETE-GET')
         username = get_username(backend, redirect_uri='/')
         return create_tokens(username)
 
@@ -152,7 +150,6 @@ class ResetPassword(Resource):
     def post(self):
         '''Sends an email to the user with a code to reset password.'''
         args = api.general_parse()
-        print(args['username'])
         user = get_user(args['username'])
 
         check_user_email(user, args['email'])
@@ -183,8 +180,6 @@ class ResetPassword(Resource):
         username = args['username']
         user = get_user(username)
         check_user_email(user, args['email'])
-        print(args['code'])
-        print(user.temp_password)
         if not user.check_temp_password(args['code']):
             api.abort_with_msg(400, 'Invalid code', ['code'])
         user.hash_password(password)
@@ -206,7 +201,7 @@ class Logout(Resource):
         return {}
 
 
-@api.route('/user/<string:username>')
+@api.route('/users/<string:username>')
 class UserAPI(Resource):
 
     @api.doc(parser=api.create_parser('token'))
@@ -241,7 +236,6 @@ class UserAPI(Resource):
             user = get_user(decoded['username'])
             changed = False
 
-            print(args)
             password = args.get('password')
             # If is changing password
             if password:
@@ -280,10 +274,23 @@ class UserAPI(Resource):
             api.abort_with_msg(550, 'Editing other user profile...',
                                ['username', 'token'])
 
-    @api.doc(parser=api.create_parser('password', 'email'))
-    def post(self, username):
+
+@api.route('/users')
+class ListUsers(Resource):
+
+    def get(self):
+        '''List registered users.'''
+        users = db.session.query(User.username).all()
+
+        return {
+            'users': [u[0] for u in users]
+        }
+
+    @api.doc(parser=api.create_parser('username', 'password', 'email'))
+    def post(self):
         '''Register a new user.'''
         args = api.general_parse()
+        username = args['username']
 
         # TODO: case insensitive? ver isso na hora de login tb
         # username = username.lower()
@@ -313,18 +320,6 @@ class UserAPI(Resource):
                 'It seems this username is already registered...',
                 ['username'])
         return create_tokens(username)
-
-
-@api.route('/users')
-class ListUsers(Resource):
-
-    def get(self):
-        '''List registered users.'''
-        users = db.session.query(User.username).all()
-
-        return {
-            'users': [u[0] for u in users]
-        }
 
 
 # def create_token(username, exp_minutes=5):
@@ -382,7 +377,8 @@ def get_user(username):
     try:
         return User.get_user(username)
     except NoResultFound:
-        api.abort_with_msg(404, 'User not found', ['username'])
+        # Returning 400 because 404 adds another msg that corrupts the json
+        api.abort_with_msg(400, 'User not found', ['username'])
 
 
 def validate_password(password, fieldname='password'):
@@ -403,7 +399,7 @@ def validate_password(password, fieldname='password'):
 def validate_email(email):
     '''Check if is a valid email.'''
     if not re.match(r'[^@]+@[^@]+\.[^@]+', email):
-        api.abort_with_msg(400, 'Invalid email...', ['email'])
+        api.abort_with_msg(400, 'Invalid email', ['email'])
 
 
 def check_user_email(user, email):
