@@ -119,8 +119,8 @@ class LoginLocalAPI(Resource):
                 api.abort_with_msg(400, 'Wrong password...', ['password'])
         except NoResultFound:
             api.abort_with_msg(400,
-                           'Username seems not registered...',
-                           ['username'])
+                               'Username seems not registered...',
+                               ['username'])
 
 
 @api.route('/renew_micro_token')
@@ -232,7 +232,7 @@ class UserAPI(Resource):
         return resp
 
     @api.doc(parser=api.create_parser('token', 'description',
-                                  'email', 'password', 'new_password'))
+                                      'email', 'password', 'new_password'))
     def put(self, username):
         '''Edit information about an user.'''
         args = api.general_parse()
@@ -278,7 +278,7 @@ class UserAPI(Resource):
 
         else:
             api.abort_with_msg(550, 'Editing other user profile...',
-                           ['username', 'token'])
+                               ['username', 'token'])
 
     @api.doc(parser=api.create_parser('password', 'email'))
     def post(self, username):
@@ -288,12 +288,13 @@ class UserAPI(Resource):
         # TODO: case insensitive? ver isso na hora de login tb
         # username = username.lower()
         if len(username) < 5:
-            api.abort_with_msg(400,
-                           'Invalid username. Needs at least 5 characters.',
-                           ['username'])
+            api.abort_with_msg(
+                400,
+                'Invalid username. Needs at least 5 characters.',
+                ['username'])
         if not re.match(r'[A-Za-z0-9]{5,}', username):
             api.abort_with_msg(400, 'Invalid characters in username...',
-                           ['username'])
+                               ['username'])
 
         password = args['password']
         validate_password(password)
@@ -307,9 +308,10 @@ class UserAPI(Resource):
         try:
             db.session.commit()
         except IntegrityError:
-            api.abort_with_msg(400,
-                           'It seems this username is already registered...',
-                           ['username'])
+            api.abort_with_msg(
+                400,
+                'It seems this username is already registered...',
+                ['username'])
         return create_tokens(username)
 
 
@@ -387,21 +389,21 @@ def validate_password(password, fieldname='password'):
     '''Check if is a valid password. The fieldname parameter is used to
     specify the fieldname in the error message.'''
     if len(password) < 5:
-        api.abort_with_msg(400,
-                       'Invalid password. Needs at least 5 characters.',
-                       [fieldname])
+        api.abort_with_msg(
+            400,
+            'Invalid password. Needs at least 5 characters.',
+            [fieldname])
     if not re.match(r'[A-Za-z0-9@#$%^&+=]{5,}', password):
-        api.abort_with_msg(400,
-                       'Invalid characters in password...',
-                       [fieldname])
+        api.abort_with_msg(
+            400,
+            'Invalid characters in password...',
+            [fieldname])
 
 
 def validate_email(email):
     '''Check if is a valid email.'''
     if not re.match(r'[^@]+@[^@]+\.[^@]+', email):
-        api.abort_with_msg(400,
-                       'Invalid email...',
-                       ['email'])
+        api.abort_with_msg(400, 'Invalid email...', ['email'])
 
 
 def check_user_email(user, email):

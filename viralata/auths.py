@@ -108,6 +108,7 @@ def do_login(backend, user, social_user):
 
 
 def insert_user(user, is_new, **kwargs):
+    # import IPython; IPython.embed()
     if user:
         g.user = user
     # TODO: Social-Auth seems to be automaticaly adding the user to the DB now.

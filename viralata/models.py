@@ -20,6 +20,7 @@ class User(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(200), unique=True)
+    # password = db.Column(db.String(1), default='')
     password_hash = db.Column(db.String(128), nullable=True)
     # name = db.Column(db.String(100))
     email = db.Column(db.String(200), default='')
