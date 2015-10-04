@@ -294,10 +294,10 @@ class ListUsers(Resource):
 
         # TODO: case insensitive? ver isso na hora de login tb
         # username = username.lower()
-        if len(username) < 5:
+        if len(username) < 5 or len(username) > 20:
             api.abort_with_msg(
                 400,
-                'Invalid username. Needs at least 5 characters.',
+                'Invalid username size. Must be between 5 and 20 characters.',
                 ['username'])
         if not re.match(r'[A-Za-z0-9]{5,}', username):
             api.abort_with_msg(400, 'Invalid characters in username...',
