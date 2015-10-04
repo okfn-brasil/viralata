@@ -317,7 +317,8 @@ class ListUsers(Resource):
         except IntegrityError:
             api.abort_with_msg(
                 400,
-                'It seems this username is already registered...',
+                'Error to create user.'
+                ' Maybe username is already registered...',
                 ['username'])
         return create_tokens(username)
 
