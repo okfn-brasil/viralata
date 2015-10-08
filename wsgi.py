@@ -1,10 +1,10 @@
 # coding: utf-8
 
 import os
-# import sys
+import sys
 
-# this_path = "/patho/to/code"
-# sys.path.insert(0, this_path)
+this_path = os.environ['OPENSHIFT_DATA_DIR']
+sys.path.insert(0, this_path)
 
 virtenv = os.environ['OPENSHIFT_PYTHON_DIR'] + '/virtenv/'
 virtualenv = os.path.join(virtenv, 'bin/activate_this.py')
