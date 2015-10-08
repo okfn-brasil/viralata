@@ -16,6 +16,7 @@ setup(
         'Flask-Script',
         'Flask-Restplus',
         'Flask-CORS',
+        'Flask-Mail',
         'Flask-SQLAlchemy',
         'python-social-auth',
         'passlib',
