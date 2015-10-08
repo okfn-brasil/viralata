@@ -1,7 +1,7 @@
 # coding: utf-8
 
 import os
-import sys
+# import sys
 
 # this_path = os.environ['OPENSHIFT_DATA_DIR']
 # sys.path.insert(0, this_path)

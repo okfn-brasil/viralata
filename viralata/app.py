@@ -17,7 +17,8 @@ def create_app(settings_folder):
     # App
     app = Flask(__name__)
     app.config.from_pyfile(
-        os.path.join(settings_folder, 'common.py'), silent=False)
+        os.path.join('..', 'settings', 'common.py'), silent=False)
+        # os.path.join(settings_folder, 'common.py'), silent=False)
     app.config.from_pyfile(
         os.path.join(settings_folder, 'local_settings.py'), silent=False)
     CORS(app, resources={r"*": {"origins": "*"}})
