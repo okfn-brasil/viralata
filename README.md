@@ -1,4 +1,4 @@
-# Vira-Lata (EXPERIMENTAL!!!)
+# Vira-Lata (Beta)
 
 Microservice for Authentication: Restlike & Social.
 
@@ -11,7 +11,7 @@ An example of web interface using this microservice as backend is [Cuidando2](ht
 An example of microservice that uses the tokens produced by this microservice is [Tagarela](https://gitlab.com/ok-br/tagarela).
 
 
-**This code should not yet be used in production!**
+**This code is still in beta stage, so it should be used with care.**
 
 
 ## Protocol
@@ -66,7 +66,7 @@ $ python manage.py run
 
 ## API
 
-Needs doc...
+Needs a 'static' doc, but accesssing the root of a hosted instance it's possible to see a Swagger doc.
 
 ## Name
 
