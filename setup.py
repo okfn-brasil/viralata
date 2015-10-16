@@ -12,6 +12,7 @@ setup(
     url='https://gitlab.com/ok-br/viralata',
     packages=["viralata"],
     install_requires=[
+        'Werkzeug==0.10.4',
         'Flask',
         'Flask-Script',
         'Flask-Restplus',
@@ -24,7 +25,7 @@ setup(
         'bleach',
         'sqlalchemy-utils',
         'arrow',
-        # psycopg2, # for Postgres support
+        'psycopg2',  # for Postgres support
     ],
     keywords=['authentication', 'microservice'],
     classifiers=[
