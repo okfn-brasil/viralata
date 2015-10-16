@@ -32,7 +32,6 @@ def init_social_models(app):
 
 def get_auth_url(backend, redirect_uri, *args, **kwargs):
     uri = redirect_uri
-    # import IPython; IPython.embed()
     if uri and not uri.startswith('/'):
         uri = url_for(uri, backend=backend)
 
@@ -65,14 +64,10 @@ class HeadlessFacebookBackend(FacebookOAuth2):
     def validate_state(self):
         if not self.STATE_PARAMETER and not self.REDIRECT_STATE:
             return None
-        state = self.get_session_state()
+        # state = self.get_session_state()
         request_state = self.get_request_state()
-        print("VALIDATE!!!!!!!!!!")
-        print(state)
-        print(request_state)
         # if not request_state:
         #     raise AuthMissingParameter(self, 'state')
-        # TODO: ver se isso não é problemático...
         return request_state
 
     def request(self, url, method='GET', *args, **kwargs):
