@@ -55,7 +55,8 @@ class HeadlessFacebookStrategy(FlaskStrategy):
     def build_absolute_uri(self, path=None):
         # TODO: Quando a API diretamente (e não a partir de outro site) não tem
         # "referrer". Como resolver isso?
-        return build_absolute_uri(flask.request.referrer, path).partition("&")[0]
+        return build_absolute_uri(
+            flask.request.referrer, path).partition("&")[0]
 
 
 class HeadlessFacebookBackend(FacebookOAuth2):
