@@ -18,8 +18,7 @@ SOCIAL_AUTH_PIPELINE = (
  'social.pipeline.social_auth.associate_user',
  'social.pipeline.social_auth.load_extra_data',
  'social.pipeline.user.user_details',
- # TODO: tirar essa linha abaixo?
- # 'viralata.auths.insert_user',
+ 'viralata.auths.insert_user',
 )
 
 SOCIAL_AUTH_LOGIN_URL = '/meu_login_url/'
