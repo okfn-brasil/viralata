@@ -1,6 +1,4 @@
-# from os.path import dirname, abspath
-
-# SQLALCHEMY_DATABASE_URI = 'sqlite:////%s/test.db' % dirname(abspath(__file__))
+from __future__ import unicode_literals  # unicode by default
 
 # SESSION_COOKIE_NAME = 'psa_session2'
 # SESSION_PROTECTION = 'strong'
