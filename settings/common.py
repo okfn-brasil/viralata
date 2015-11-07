@@ -1,5 +1,8 @@
 from __future__ import unicode_literals  # unicode by default
 
+MICRO_TOKEN_VALID_PERIOD = 5
+MAIN_TOKEN_VALID_PERIOD = 10080  # one week
+
 # SESSION_COOKIE_NAME = 'psa_session2'
 # SESSION_PROTECTION = 'strong'
 

@@ -18,12 +18,6 @@ from utils import decode_validate_token
 from cutils import ExtraApi
 
 
-# TODO: permitir configurar melhor
-MICRO_TOKEN_VALID_PERIOD = 5
-# one week
-MAIN_TOKEN_VALID_PERIOD = 10080
-
-
 api = ExtraApi(version='1.0',
                title='Vira-lata',
                description='An authentication microservice.')
@@ -139,7 +133,8 @@ class RenewMicroToken(Resource):
         token = create_token(decoded['username']),
         return {
             'microToken': token,
-            'microTokenValidPeriod': MICRO_TOKEN_VALID_PERIOD,
+            'microTokenValidPeriod': api.app.config[
+                'MICRO_TOKEN_VALID_PERIOD'],
         }
 
 
@@ -341,7 +336,8 @@ def create_tokens(username):
     return {
         'mainToken': main_token,
         'microToken': create_token(username),
-        'microTokenValidPeriod': MICRO_TOKEN_VALID_PERIOD,
+        'microTokenValidPeriod': api.app.config['MICRO_TOKEN_VALID_PERIOD'],
+        'mainTokenValidPeriod': api.app.config['MAIN_TOKEN_VALID_PERIOD'],
     }
 
 
@@ -350,10 +346,10 @@ def create_token(username, main=False):
     "main" controls the type of the token.'''
 
     if main:
-        exp_minutes = MAIN_TOKEN_VALID_PERIOD
+        exp_minutes = api.app.config['MAIN_TOKEN_VALID_PERIOD']
         token_type = 'main'
     else:
-        exp_minutes = MICRO_TOKEN_VALID_PERIOD
+        exp_minutes = api.app.config['MICRO_TOKEN_VALID_PERIOD']
         token_type = 'micro'
 
     return sv.encode({
