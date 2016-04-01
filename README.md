@@ -13,6 +13,8 @@ An example of microservice that uses the tokens produced by this microservice is
 
 **This code is still in beta stage, so it should be used with care.**
 
+Still only Python 2.
+
 
 ## Protocol
 
