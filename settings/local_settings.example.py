@@ -7,6 +7,7 @@ SOCIAL_AUTH_FACEBOOK_SECRET = '{your_facebook_dev_secret}'
 # This is required for PSA for sessions, even though we are not using them...
 SECRET_KEY = '{long_string...}'
 
+# Password to unlock key. Use None if no password is needed.
 PRIVATE_KEY_PASSWORD = '{your_key_password}'
 
 

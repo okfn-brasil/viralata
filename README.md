@@ -46,6 +46,7 @@ $ pip install psycopg2
 
 You will also need to generate an RSA key and place it in `settings/key` file.
 The public key will be used by the other micro services to validate the tokens.
+The password for the key file must be set in `PRIVATE_KEY_PASSWORD` at `settings/local_settings.py`.
 
 
 ## Prepare DB
